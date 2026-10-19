@@ -1,4 +1,4 @@
-# Lumen Reader 技术设计
+# Lumen Study Desk 技术设计
 
 ## 1. 技术选型
 
@@ -16,7 +16,7 @@ reader-app/
 │  ├─ main.cjs       # Electron 主进程与窗口
 │  └─ preload.cjs    # 安全暴露本地存储 API
 ├─ src/
-│  ├─ main.js        # 书架、导入、阅读和目录逻辑
+│  ├─ main.js        # 书架、导入、阅读、笔记和统计逻辑
 │  └─ styles.css     # 桌面端布局与主题
 ├─ PRD.md
 ├─ TECH_DESIGN.md
@@ -38,7 +38,10 @@ reader-app/
   data,          // EPUB 的 base64 内容
   chapters,      // 目录条目
   currentChapter,
-  progress
+  progress,
+  bookmarks,
+  notes,
+  sessions
 }
 ```
 
@@ -52,6 +55,8 @@ reader-app/
 4. 用户点击目录时更新 `currentChapter`，TXT 使用滚动定位，EPUB 使用 rendition display。
 5. 阅读区域滚动或 EPUB 触发 relocated 事件时更新 `progress`。
 6. 通过 preload IPC 防抖写入本地状态，重启时恢复书架、主题和阅读位置。
+7. TXT 正文搜索按行生成结果，点击结果滚动到对应位置。
+8. 笔记和书签写入同一本地状态文件，统计面板从书籍数据实时计算。
 
 ## 5. 安全与边界
 
@@ -59,6 +64,7 @@ reader-app/
 - 主进程只通过两个 IPC 方法读写阅读器状态。
 - EPUB 内容只在本地渲染，不发起业务网络请求。
 - 文件大小和复杂排版不在本阶段做额外优化。
+- EPUB 当前优先保证导入、目录和章节渲染，正文搜索保留为后续增强点。
 
 ## 6. 验证计划
 
@@ -67,3 +73,6 @@ reader-app/
 - 导入 TXT，检查正文、目录、章节跳转和滚动进度。
 - 导入 EPUB，检查目录、章节跳转和格式标识。
 - 关闭窗口后重新打开，确认书架与进度恢复。
+- 点击书签按钮，确认统计面板出现书签。
+- 打开笔记面板，保存一条笔记并删除，确认数据更新。
+- 搜索 TXT 正文关键词，点击结果确认阅读位置跳转。

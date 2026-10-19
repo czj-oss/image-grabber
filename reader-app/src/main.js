@@ -37,6 +37,13 @@ const initialDemo = {
   ],
   progress: 18,
   currentChapter: 0,
+  bookmarks: [
+    { id: "demo-bookmark-1", label: "第一章  从需求开始", chapter: 0, createdAt: "课程示例" }
+  ],
+  notes: [
+    { id: "demo-note-1", text: "先把用户要完成的任务说清楚，再拆成可以验证的小步骤。", chapter: 0, createdAt: "课程示例" }
+  ],
+  sessions: 3,
   importedAt: "课程示例"
 };
 
@@ -45,6 +52,9 @@ const state = {
   activeBookId: DEMO_ID,
   theme: "light",
   search: "",
+  textSearch: "",
+  rightTab: "toc",
+  noteDraft: "",
   epub: null,
   rendition: null,
   saveTimer: null,
@@ -59,6 +69,10 @@ const lucideNames = {
   list: "list",
   right: "panel-right",
   search: "search",
+  bookmark: "bookmark",
+  note: "notebook-pen",
+  stats: "bar-chart-3",
+  save: "save",
   sun: "sun",
   moon: "moon",
   back: "chevron-left",
@@ -88,6 +102,15 @@ function formatProgress(value) {
   return `${Math.round(value || 0)}%`;
 }
 
+function normalizeBook(book) {
+  return {
+    ...book,
+    bookmarks: book.bookmarks || [],
+    notes: book.notes || [],
+    sessions: book.sessions || 1
+  };
+}
+
 function chapterRows(book) {
   const chapters = book?.chapters || [];
   const query = state.search.trim().toLowerCase();
@@ -96,14 +119,64 @@ function chapterRows(book) {
     .filter((chapter) => !query || chapter.label.toLowerCase().includes(query));
 }
 
+function renderSearchResults(book) {
+  const query = state.textSearch.trim().toLowerCase();
+  if (!query) return "";
+  if (book.type !== "TXT") {
+    return `<div class="search-message">EPUB 正文搜索将在下一轮支持，当前可使用目录搜索。</div>`;
+  }
+  const results = book.content.split(/\r?\n/)
+    .map((line, index) => ({ line, index }))
+    .filter((item) => item.line.toLowerCase().includes(query))
+    .slice(0, 6);
+  if (!results.length) return `<div class="search-message">没有找到匹配内容</div>`;
+  return `<div class="search-results">${results.map((item) => `<button class="search-result" data-search-line="${item.index}"><span>${String(item.index + 1).padStart(2, "0")}</span><strong>${escapeHtml(item.line.trim() || "空行")}</strong>${icon("right", 13)}</button>`).join("")}</div>`;
+}
+
+function renderStudyPanel(book, chapters) {
+  if (state.rightTab === "notes") {
+    return `
+      <div class="note-compose">
+        <textarea id="note-input" placeholder="记录当前章节的想法...">${escapeHtml(state.noteDraft)}</textarea>
+        <button class="save-note-button" id="save-note">${icon("save", 14)}保存笔记</button>
+      </div>
+      <div class="notes-list">
+        ${book.notes?.length ? book.notes.slice().reverse().map((note) => `
+          <article class="note-item">
+            <div class="note-item-meta"><span>第 ${(note.chapter || 0) + 1} 章</span><button class="remove-note" data-note-id="${note.id}" title="删除笔记">${icon("close", 13)}</button></div>
+            <p>${escapeHtml(note.text)}</p>
+          </article>
+        `).join("") : `<p class="empty-panel">还没有笔记，先记录一个想法吧。</p>`}
+      </div>
+    `;
+  }
+  if (state.rightTab === "stats") {
+    return `
+      <div class="stats-overview"><span class="eyebrow">READING INSIGHTS</span><strong>${formatProgress(book.progress)}</strong><p>当前书籍完成度</p></div>
+      <div class="stats-grid">
+        <div><strong>${book.chapters?.length || 0}</strong><span>章节</span></div>
+        <div><strong>${book.bookmarks?.length || 0}</strong><span>书签</span></div>
+        <div><strong>${book.notes?.length || 0}</strong><span>笔记</span></div>
+        <div><strong>${book.sessions || 1}</strong><span>阅读次数</span></div>
+      </div>
+      <div class="bookmark-section"><span class="eyebrow">BOOKMARKS</span>${book.bookmarks?.length ? book.bookmarks.map((bookmark) => `<button class="bookmark-row" data-bookmark-chapter="${bookmark.chapter}"><span>${String((bookmark.chapter || 0) + 1).padStart(2, "0")}</span><strong>${escapeHtml(bookmark.label)}</strong>${icon("right", 13)}</button>`).join("") : `<p class="empty-panel">点击上方书签按钮保存当前位置。</p>`}</div>
+    `;
+  }
+  return `
+    <label class="search-field">${icon("search", 15)}<input id="toc-search" type="search" placeholder="搜索章节" value="${escapeHtml(state.search)}" /></label>
+    <div class="toc-list">${chapters.length ? chapters.map((chapter) => `<button class="toc-row ${chapter.index === (book.currentChapter || 0) ? "is-current" : ""}" data-chapter-index="${chapter.index}"><span>${String(chapter.index + 1).padStart(2, "0")}</span><strong>${escapeHtml(chapter.label)}</strong>${chapter.index === (book.currentChapter || 0) ? `<i>${icon("right", 14)}</i>` : ""}</button>`).join("") : `<p class="no-results">没有匹配的章节</p>`}</div>
+    <div class="toc-note">${book.type === "EPUB" ? "EPUB 目录来自书籍内置导航。" : "TXT 章节根据标题自动识别，也可以继续滚动阅读。"}</div>
+  `;
+}
+
 function render() {
-  const book = activeBook() || initialDemo;
+  const book = normalizeBook(activeBook() || initialDemo);
   const chapters = chapterRows(book);
   document.documentElement.dataset.theme = state.theme;
   app.innerHTML = `
     <div class="app-shell">
       <header class="topbar">
-        <div class="brand">${icon("book", 22)}<span>Lumen Reader</span><small>DESKTOP READER</small></div>
+        <div class="brand">${icon("book", 22)}<span>Lumen Study Desk</span><small>DESKTOP STUDY WORKSPACE</small></div>
         <div class="topbar-actions">
           <label class="import-button" title="导入 TXT 或 EPUB 文件">
             ${icon("upload")}<span>导入书籍</span>
@@ -129,8 +202,10 @@ function render() {
         <section class="reader-panel">
           <div class="reader-toolbar">
             <div class="reader-meta"><span class="format-badge">${book.type}</span><div><h2>${escapeHtml(book.title)}</h2><p>${escapeHtml(book.author || "未知作者")} · ${escapeHtml(book.sizeLabel || "本地文件")}</p></div></div>
-            <div class="reader-tools"><button class="tool-button" id="focus-search" title="搜索目录">${icon("search")}<span>搜索</span></button><button class="tool-button" id="toggle-toc" title="显示或隐藏目录">${icon("right")}<span>目录</span></button></div>
+            <div class="reader-tools"><button class="tool-button" id="focus-search" title="全文搜索">${icon("search")}<span>全文搜索</span></button><button class="tool-button" id="add-bookmark" title="保存当前章节">${icon("bookmark")}<span>书签</span></button><button class="tool-button" id="toggle-toc" title="显示或隐藏学习面板">${icon("right")}<span>面板</span></button></div>
           </div>
+          <div class="reader-search-row"><label class="search-field">${icon("search", 15)}<input id="text-search" type="search" placeholder="搜索正文中的关键词" value="${escapeHtml(state.textSearch)}" /></label><span>支持 TXT 正文检索</span></div>
+          <div id="search-results-host">${renderSearchResults(book)}</div>
           <div class="progress-line"><span style="width: ${Math.max(1, Math.min(100, book.progress || 0))}%"></span></div>
           <div class="reader-stage">
             <div class="reader-content ${book.type === "EPUB" ? "is-epub" : ""}" id="reader-content"></div>
@@ -139,10 +214,9 @@ function render() {
           <footer class="reader-footer"><button class="text-button" id="previous-chapter">${icon("back", 15)}上一章</button><span id="reading-status">第 ${(book.currentChapter || 0) + 1} 章 · ${formatProgress(book.progress)} 已读</span><button class="text-button" id="next-chapter">下一章${icon("next", 15)}</button></footer>
         </section>
         <aside class="toc-panel" id="toc-panel">
-          <div class="toc-heading"><div><span class="eyebrow">CONTENTS</span><h2>目录</h2></div><button class="small-icon-button" id="close-toc" title="关闭目录">${icon("close", 16)}</button></div>
-          <label class="search-field">${icon("search", 15)}<input id="toc-search" type="search" placeholder="搜索章节" value="${escapeHtml(state.search)}" /></label>
-          <div class="toc-list">${chapters.length ? chapters.map((chapter) => `<button class="toc-row ${chapter.index === (book.currentChapter || 0) ? "is-current" : ""}" data-chapter-index="${chapter.index}"><span>${String(chapter.index + 1).padStart(2, "0")}</span><strong>${escapeHtml(chapter.label)}</strong>${chapter.index === (book.currentChapter || 0) ? `<i>${icon("right", 14)}</i>` : ""}</button>`).join("") : `<p class="no-results">没有匹配的章节</p>`}</div>
-          <div class="toc-note">${book.type === "EPUB" ? "EPUB 目录来自书籍内置导航。" : "TXT 章节根据标题自动识别，也可以继续滚动阅读。"}</div>
+          <div class="toc-heading"><div><span class="eyebrow">STUDY PANEL</span><h2>${state.rightTab === "toc" ? "目录" : state.rightTab === "notes" ? "学习笔记" : "学习统计"}</h2></div><button class="small-icon-button" id="close-toc" title="关闭面板">${icon("close", 16)}</button></div>
+          <div class="study-tabs"><button class="study-tab ${state.rightTab === "toc" ? "is-active" : ""}" data-study-tab="toc">${icon("list", 14)}目录</button><button class="study-tab ${state.rightTab === "notes" ? "is-active" : ""}" data-study-tab="notes">${icon("note", 14)}笔记 <b>${book.notes?.length || 0}</b></button><button class="study-tab ${state.rightTab === "stats" ? "is-active" : ""}" data-study-tab="stats">${icon("stats", 14)}统计</button></div>
+          <div id="study-panel-content">${renderStudyPanel(book, chapters)}</div>
         </aside>
       </main>
       <div class="toast" id="toast" role="status"></div>
@@ -164,7 +238,28 @@ function bindEvents() {
   });
   document.querySelector("#toggle-toc")?.addEventListener("click", () => document.querySelector("#toc-panel")?.classList.toggle("is-collapsed"));
   document.querySelector("#close-toc")?.addEventListener("click", () => document.querySelector("#toc-panel")?.classList.add("is-collapsed"));
-  document.querySelector("#focus-search")?.addEventListener("click", () => document.querySelector("#toc-search")?.focus());
+  document.querySelector("#focus-search")?.addEventListener("click", () => document.querySelector("#text-search")?.focus());
+  document.querySelector("#text-search")?.addEventListener("input", (event) => {
+    state.textSearch = event.target.value;
+    const host = document.querySelector("#search-results-host");
+    if (host) {
+      host.innerHTML = renderSearchResults(activeBook());
+      createIcons({ icons });
+      bindSearchResultEvents();
+    }
+  });
+  document.querySelector("#add-bookmark")?.addEventListener("click", addBookmark);
+  document.querySelectorAll("[data-study-tab]").forEach((button) => button.addEventListener("click", () => {
+    state.rightTab = button.dataset.studyTab;
+    render();
+  }));
+  document.querySelector("#save-note")?.addEventListener("click", saveNote);
+  document.querySelector("#note-input")?.addEventListener("input", (event) => {
+    state.noteDraft = event.target.value;
+  });
+  document.querySelectorAll("[data-note-id]").forEach((button) => button.addEventListener("click", () => removeNote(button.dataset.noteId)));
+  document.querySelectorAll("[data-bookmark-chapter]").forEach((button) => button.addEventListener("click", () => selectChapter(Number(button.dataset.bookmarkChapter))));
+  bindSearchResultEvents();
   document.querySelector("#toc-search")?.addEventListener("input", (event) => {
     state.search = event.target.value;
     render();
@@ -175,6 +270,8 @@ function bindEvents() {
   document.querySelectorAll("[data-book-id]").forEach((button) => button.addEventListener("click", () => {
     state.activeBookId = button.dataset.bookId;
     state.search = "";
+    state.textSearch = "";
+    state.rightTab = "toc";
     destroyEpub();
     persist();
     render();
@@ -182,6 +279,15 @@ function bindEvents() {
   document.querySelectorAll("[data-chapter-index]").forEach((button) => button.addEventListener("click", () => selectChapter(Number(button.dataset.chapterIndex))));
   document.querySelector("#previous-chapter")?.addEventListener("click", () => selectChapter(Math.max(0, (activeBook().currentChapter || 0) - 1)));
   document.querySelector("#next-chapter")?.addEventListener("click", () => selectChapter(Math.min(activeBook().chapters.length - 1, (activeBook().currentChapter || 0) + 1)));
+}
+
+function bindSearchResultEvents() {
+  document.querySelectorAll("[data-search-line]").forEach((button) => button.addEventListener("click", () => {
+    const host = document.querySelector("#reader-content");
+    const nodes = host?.querySelectorAll("p, .paragraph-gap") || [];
+    state.skipScrollUpdateUntil = Date.now() + 700;
+    nodes[Number(button.dataset.searchLine)]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }));
 }
 
 function renderTxt(book) {
@@ -274,6 +380,55 @@ function selectChapter(index) {
   document.querySelectorAll(".toc-row").forEach((row) => row.classList.toggle("is-current", Number(row.dataset.chapterIndex) === index));
 }
 
+function addBookmark() {
+  const book = activeBook();
+  if (!book) return;
+  book.bookmarks = book.bookmarks || [];
+  const chapter = book.currentChapter || 0;
+  if (book.bookmarks.some((bookmark) => bookmark.chapter === chapter)) {
+    showToast("当前章节已经保存过书签");
+    return;
+  }
+  book.bookmarks.push({
+    id: `bookmark-${Date.now()}`,
+    label: book.chapters?.[chapter]?.label || `第 ${chapter + 1} 章`,
+    chapter,
+    createdAt: new Date().toLocaleDateString("zh-CN")
+  });
+  persist();
+  showToast("已保存当前章节书签");
+  if (state.rightTab === "stats") render();
+}
+
+function saveNote() {
+  const book = activeBook();
+  const text = state.noteDraft.trim();
+  if (!book || !text) {
+    showToast("先写下内容，再保存笔记");
+    return;
+  }
+  book.notes = book.notes || [];
+  book.notes.push({
+    id: `note-${Date.now()}`,
+    text,
+    chapter: book.currentChapter || 0,
+    createdAt: new Date().toLocaleDateString("zh-CN")
+  });
+  state.noteDraft = "";
+  state.rightTab = "notes";
+  persist();
+  render();
+  showToast("笔记已保存");
+}
+
+function removeNote(id) {
+  const book = activeBook();
+  book.notes = (book.notes || []).filter((note) => note.id !== id);
+  persist();
+  render();
+  showToast("笔记已删除");
+}
+
 function updateReadingStatus(book) {
   const status = document.querySelector("#reading-status");
   const progress = document.querySelector(".progress-line span");
@@ -295,6 +450,9 @@ async function handleImport(event) {
       sizeLabel: `${Math.max(1, Math.round(file.size / 1024))} KB`,
       progress: 0,
       currentChapter: 0,
+      bookmarks: [],
+      notes: [],
+      sessions: 1,
       importedAt: new Date().toLocaleDateString("zh-CN")
     };
     if (extension === "TXT") {
@@ -312,6 +470,8 @@ async function handleImport(event) {
     state.books = [book, ...state.books.filter((item) => item.id !== id)];
     state.activeBookId = id;
     state.search = "";
+    state.textSearch = "";
+    state.rightTab = "toc";
     destroyEpub();
     await persist();
     render();
@@ -379,10 +539,13 @@ function showToast(message) {
 
 async function boot() {
   const saved = await window.readerStore?.load();
-  state.books = saved?.books?.length ? saved.books : [initialDemo];
+  state.books = saved?.books?.length ? saved.books.map(normalizeBook) : [initialDemo];
   state.activeBookId = saved?.activeBookId || state.books[0].id;
   state.theme = saved?.theme || "light";
   if (!state.books.some((book) => book.id === DEMO_ID)) state.books.push(initialDemo);
+  const book = state.books.find((item) => item.id === state.activeBookId);
+  if (book) book.sessions = (book.sessions || 0) + 1;
+  persist();
   render();
 }
 
