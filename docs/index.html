@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="图提取 ImageGrab，提取电商详情页图片并批量下载为 PNG。">
+    <title>图提取 ImageGrab | 电商图片下载插件</title>
+    <link rel="stylesheet" href="./css/style.css">
+  </head>
+  <body>
+    <header class="site-header" id="top">
+      <nav class="nav container" aria-label="主导航">
+        <a class="brand" href="#top" aria-label="图提取首页"><span class="brand-mark">IG</span><span>图提取</span></a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">菜单</button>
+        <div class="site-menu" id="site-menu">
+          <a href="#intro">产品介绍</a>
+          <a href="#features">核心功能</a>
+          <a href="#steps">安装步骤</a>
+          <a class="nav-cta" href="#download">下载插件</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero section container" id="intro">
+        <div class="hero-copy reveal">
+          <p class="kicker">IMAGEGRAB / CHROME EXTENSION</p>
+          <h1>一键提取电商详情页所有图片</h1>
+          <p class="hero-lead">从商品页面集中收集图片，按需勾选并批量下载为 PNG。支持淘宝、京东和拼多多商家版。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#steps">立即安装</a>
+            <a class="button button-quiet" href="#features">查看功能</a>
+          </div>
+        </div>
+        <div class="hero-visual reveal" aria-label="图片画廊界面示意图">
+          <div class="browser-window">
+            <div class="browser-bar"><span></span><span></span><span></span><b>imagegrab / gallery</b></div>
+            <div class="mock-toolbar"><div><small>IMAGEGRAB</small><strong>图片画廊</strong></div><button>下载选中</button></div>
+            <div class="mock-grid"><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          </div>
+          <div class="float-label"><span class="dot"></span>已发现 24 张商品图片</div>
+        </div>
+      </section>
+
+      <section class="intro-band section">
+        <div class="container split-grid">
+          <div class="reveal"><p class="kicker">WHY IMAGEGRAB</p><h2>把分散的商品图片，整理成一次可完成的下载任务</h2></div>
+          <div class="intro-text reveal"><p>详情页图片常常隐藏在懒加载属性、响应式图片或背景图中。图提取会集中扫描并去除重复的小图标。</p><p>你可以在独立画廊中预览结果，选择真正需要的图片，再批量保存到本地。</p></div>
+        </div>
+      </section>
+
+      <section class="section container" id="features">
+        <div class="section-heading reveal"><p class="kicker">CORE FEATURES</p><h2>从提取到下载，保持清晰可控</h2></div>
+        <div class="feature-grid">
+          <article class="feature-card reveal"><span class="feature-number">01</span><h3>一键提取</h3><p>自动扫描商品图片并兼容常见懒加载属性。</p></article>
+          <article class="feature-card reveal"><span class="feature-number">02</span><h3>智能过滤</h3><p>过滤 logo、图标、占位图和过小图片。</p></article>
+          <article class="feature-card reveal"><span class="feature-number">03</span><h3>集中预览</h3><p>在新页面以网格方式查看提取结果和图片尺寸。</p></article>
+          <article class="feature-card reveal"><span class="feature-number">04</span><h3>自由勾选</h3><p>支持全选、反选和按需下载，减少重复操作。</p></article>
+          <article class="feature-card reveal"><span class="feature-number">05</span><h3>统一 PNG</h3><p>下载时尝试将 JPG、WebP 等格式转换为 PNG。</p></article>
+          <article class="feature-card reveal"><span class="feature-number">06</span><h3>批量下载</h3><p>按序号生成文件名，保存到浏览器默认下载目录。</p></article>
+        </div>
+      </section>
+
+      <section class="steps-band section" id="steps">
+        <div class="container"><div class="section-heading reveal"><p class="kicker">INSTALLATION</p><h2>四步加载扩展</h2></div>
+          <ol class="steps-list">
+            <li class="step reveal"><span>01</span><div><h3>下载并解压</h3><p>将插件项目文件夹保存到本地，不要删除其中的 <code>manifest.json</code>。</p></div></li>
+            <li class="step reveal"><span>02</span><div><h3>打开扩展管理页</h3><p>在 Chrome 地址栏输入 <code>chrome://extensions</code> 并回车。</p></div></li>
+            <li class="step reveal"><span>03</span><div><h3>打开开发者模式</h3><p>点击扩展管理页面右上角的“开发者模式”开关。</p></div></li>
+            <li class="step reveal"><span>04</span><div><h3>加载已解压的扩展程序</h3><p>点击按钮，选择包含 <code>manifest.json</code> 的项目根目录。</p></div></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="download-section section container" id="download">
+        <div class="download-box reveal"><div><p class="kicker">READY TO USE</p><h2>让下一次图片整理少一点重复操作</h2><p>插件支持淘宝、天猫、京东和拼多多商家版页面。</p></div><a class="button button-primary" href="https://github.com/" target="_blank" rel="noreferrer">前往 GitHub</a></div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="container footer-inner"><span>© 2026 图提取 ImageGrab</span><span>支持淘宝、京东、拼多多商家版</span><a href="https://github.com/" target="_blank" rel="noreferrer">GitHub 项目</a></div></footer>
+    <script src="./js/main.js"></script>
+  </body>
+</html>

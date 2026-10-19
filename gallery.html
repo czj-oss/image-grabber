@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图提取 | 图片画廊</title>
+    <link rel="stylesheet" href="gallery.css">
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="toolbar">
+        <div>
+          <p class="eyebrow">IMAGEGRAB</p>
+          <h1>图片画廊</h1>
+          <p id="summary" class="summary">正在读取图片...</p>
+        </div>
+        <div class="toolbar-actions">
+          <button id="select-all" class="button button-secondary" type="button">全选</button>
+          <button id="invert-selection" class="button button-secondary" type="button">反选</button>
+          <button id="download-selected" class="button button-primary" type="button">下载选中</button>
+        </div>
+      </header>
+
+      <section id="status" class="status" aria-live="polite"></section>
+      <section id="gallery" class="gallery" aria-label="提取到的图片"></section>
+      <section id="empty-state" class="empty-state" hidden>
+        <div class="empty-icon">IMG</div>
+        <h2>暂时没有可用图片</h2>
+        <p>请返回商品详情页，确认页面已经加载图片后重新点击“获取图片”。</p>
+      </section>
+    </main>
+    <script src="gallery.js"></script>
+  </body>
+</html>
